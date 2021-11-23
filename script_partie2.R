@@ -15,7 +15,7 @@ dim(A_init)
 label<-attributes(A_init)$row.names
 # librairie pour permettre le changement des col
 library(dplyr, quietly = TRUE)
-A_full <- A_init %>% rename( MDVP_Fo = V2 , MDVP_Fhi = V3, MDVP_Flow = V4, 
+A_full <- A_init %>% rename( SignalId= V1, MDVP_Fo = V2 , MDVP_Fhi = V3, MDVP_Flow = V4, 
                     MDVP_JitterRel = V5, MDVP_JitterAbs =V6, MDVP_Rap=V7, 
                     MDVP_PPQ = V8, Jitter_DDP = V9, MDVP_Shimmer = V10, 
                     MDVP_ShimmerDB = V11, Shimmer_APQ3 = V12, 
@@ -45,6 +45,26 @@ describe(A_full)
 # Représentation graphique
 
 
+library(tidyverse) 
+
+
+B_full<-A_full[-1]
+B_full
+
+all(!is.na(B_full))
+lapply(B_full,function(x) which(is.na(x)))
+Bk<-kmeans(B_full,2)
+Bk
+#Tracé de la fonction du courde
+#source("/home/liz/Documents/MS Big Data/Data Mining/TP3-Classification/fct_coude.R")
+{
+  Tab<- NULL
+  for(k in 1:10){
+    Res<-kmeans(B_full,k)
+    Tab[k]= Res$tot.withinss/Res$totss
+  }
+  plot(Tab, typ='l')
+}
 
 
 ################################################################################
