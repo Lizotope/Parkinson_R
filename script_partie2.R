@@ -1,5 +1,5 @@
 getwd()
-setwd("/home/liz/Documents/MS_Big_Data_TP_et_projets/Data Mining/Projet/")
+setwd("/home/liz/Documents/MS_Big_Data_TP_et_projets/Data Mining/Projet/Parkinson_R")
 #PARTIE 1
 A<-read.table("parkinsons.data_headerless")
 dim(A)
@@ -7,13 +7,13 @@ label<-attributes(A)$row.names
 View(A)
 names(A)
 library(dplyr, quietly = TRUE)
-A2 <- A %>% rename( MDVP_Fo = V1 , MDVP_Fhi = V2, MDVP_Flow = V3, 
-                    MDVP_JitterRel = V4, MDVP_JitterAbs =V5, MDVP_Rap=V6, 
-                    MDVP_PPQ = V7, Jitter_DDP = V8, MDVP_Shimmer = V9, 
-                    MDVP_ShimmerDB = V10, Shimmer_APQ3 = V11, 
-                    Shimmer_APQ5 = V12, MDVP_APQ = V13, Shimmer_DDA = V14, 
-                    NHR = V15, HNR = V16, status = V17, RPDE = V18, DFA = V19, 
-                    spread1 = V20, spread2 = V21, D2 = V22, PPE = V23
+A2 <- A %>% rename( MDVP_Fo = V2 , MDVP_Fhi = V3, MDVP_Flow = V4, 
+                    MDVP_JitterRel = V5, MDVP_JitterAbs =V6, MDVP_Rap=V7, 
+                    MDVP_PPQ = V8, Jitter_DDP = V9, MDVP_Shimmer = V10, 
+                    MDVP_ShimmerDB = V11, Shimmer_APQ3 = V12, 
+                    Shimmer_APQ5 = V13, MDVP_APQ = V14, Shimmer_DDA = V15, 
+                    NHR = V16, HNR = V17, status = V18, RPDE = V19, DFA = V20, 
+                    spread1 = V21, spread2 = V22, D2 = V23, PPE = V24
 )
 
 names(A2)
