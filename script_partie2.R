@@ -8,7 +8,7 @@ View(A)
 names(A)
 library(dplyr, quietly = TRUE)
 A2 <- A %>% rename( MDVP_Fo = V1 , MDVP_Fhi = V2, MDVP_Flow = V3, 
-                    MDVP_JitterRel = V4, MDVP_JitterAbs =V4, MDVP_Rap=V6, 
+                    MDVP_JitterRel = V4, MDVP_JitterAbs =V5, MDVP_Rap=V6, 
                     MDVP_PPQ = V7, Jitter_DDP = V8, MDVP_Shimmer = V9, 
                     MDVP_ShimmerDB = V10, Shimmer_APQ3 = V11, 
                     Shimmer_APQ5 = V12, MDVP_APQ = V13, Shimmer_DDA = V14, 
