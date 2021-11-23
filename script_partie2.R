@@ -10,6 +10,7 @@
 getwd()
 setwd("/home/liz/Documents/MS_Big_Data_TP_et_projets/Data Mining/Projet/Parkinson_R")
 A_init<-read.table("parkinsons.data_headerless")
+# voir si read.csv peut convenir
 dim(A_init)
 label<-attributes(A_init)$row.names
 # librairie pour permettre le changement des col
