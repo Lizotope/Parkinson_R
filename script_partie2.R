@@ -1,12 +1,20 @@
-################ TP A RENDRE POUR LE 18 JANVIER 2021 ##########################
+################ Practice to be given before 18th of Jan 2022 ##################
 ###############################################################################
-# Ce fichier présente le code source permettant l'analyse du dataset d'étude
-# Binôme : Franck Saoude et Elisabeth Bourgeois 
+# This file presents source code giving Parkinson dataset analysis
+# Team : Franck Saoude and Elisabeth Bourgeois 
 ################################################################################
-# DEBUT
+# START
 ################################################################################
 # 
-# Etape 1 : PREPARATION DES DONNEES
+# Packages needed (not exhaustive list):
+# factoextra, Hmisc, tidyverse, Nbclust, ggplot2
+# uncomment the following cmd to install one of them, if needed : 
+# install.packages("package_name") 
+# example : install.packages("NbClust") 
+#
+################################################################################
+# STEP 1 : DATA PREPARATION
+################################################################################
 getwd()
 setwd("/home/liz/Documents/MS_Big_Data_TP_et_projets/Data Mining/Projet/Parkinson_R")
 A_init<-read.table("parkinsons.data_headerless")
@@ -29,8 +37,8 @@ names(A_full)
 View(A_full)
 
 ################################################################################
-# Etape 2 : ANALYSE DESCRIPTIVE
-
+# STEP 2 : DESCRIPTIVE ANALYSIS
+################################################################################
 # Statistiques descriptives
 #
 # Min, max, moy, mediane, 1er et 3ème quartiles,  des 23 paramètres quantitatifs 
@@ -45,28 +53,73 @@ describe(A_full)
 # Représentation graphique
 
 
-library(tidyverse) 
+
+################################################################################
+# STEP 3 : EXPLORATING ANALYSIS
+################################################################################
+#
 
 
+# le kmeans ne fonctionne pas en présence de la colonne SignalId car 
+# ce sont des chaînes de caractères
+# retrait de cette colonne 1
 B_full<-A_full[-1]
 B_full
 
+#
+# je m'assure que toutes les données sont définies
 all(!is.na(B_full))
+# si il y en a une qui ne l'est pas, je cherche laquelle
 lapply(B_full,function(x) which(is.na(x)))
-Bk<-kmeans(B_full,2)
-Bk
+
+
+# Standardisation des données
+B_full_sc <- scale(B_full)
+view(B_full_sc)
+
+library(tidyverse) 
+# Algo kmeans sur 2 clusters
+B2<-kmeans(B_full_sc,2)
+B2
+
+# Eval du nb de cluster optimal
+######################################
+
+library(factoextra)
+library(NbClust)
+
 #Tracé de la fonction du courde
 #source("/home/liz/Documents/MS Big Data/Data Mining/TP3-Classification/fct_coude.R")
 {
   Tab<- NULL
   for(k in 1:10){
-    Res<-kmeans(B_full,k)
+    Res<-kmeans(B_full_sc,k)
     Tab[k]= Res$tot.withinss/Res$totss
   }
   plot(Tab, typ='l')
 }
 
+# Tracé de la valeur silhouette
+fviz_nbclust(B_full_sc, kmeans, method = "silhouette")+
+  labs(subtitle = "Silhouette method") 
 
+# Gap statistic
+# nboot = 50 to keep the function speedy.
+# recommended value: nboot= 500 for your analysis.
+# Use verbose = FALSE to hide computing progression.
+set.seed(123)
+fviz_nbclust(B_full_sc, kmeans, nstart = 25, method = "gap_stat", nboot = 50)+
+  labs(subtitle = "Gap statistic method") 
+
+
+# visu des clusters
+km.out2=kmeans(B_full_sc,centers=2,nstart =20)
+pairs(B_full_sc, col=c(1:2)[km.out2$cluster]) 
+
+# acp
+# visu des val aberrantes !
+library(factoextra)
+fviz_cluster(km.out2, B_full_sc, ellipse.type = "norm") 
 ################################################################################
-# FIN
+# END
 ################################################################################
