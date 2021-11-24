@@ -7,10 +7,10 @@
 ################################################################################
 # 
 # Packages needed (not exhaustive list):
-# factoextra, Hmisc, tidyverse, Nbclust, ggplot2
+# factoextra, Hmisc, tidyverse, Nbclust, ggplot2, plotrix
 # uncomment the following cmd to install one of them, if needed : 
 # install.packages("package_name") 
-# example : install.packages("NbClust") 
+# example : install.packages("plotrix") 
 #
 ################################################################################
 # STEP 1 : DATA PREPARATION
@@ -18,7 +18,7 @@
 getwd()
 setwd("/home/liz/Documents/MS_Big_Data_TP_et_projets/Data Mining/Projet/Parkinson_R")
 P_init<-read.table("parkinsons.data", header = FALSE, sep = ",", quote = "", dec = ".", 
-                   row.names=1, col.names=c("Signal_Id","MDVP_Fo", "MDVP_Fhi", "MDVP_Flow ","MDVP_JitterRel", 
+                   row.names=1, col.names=c("Signal_Id","MDVP_Fo", "MDVP_Fhi", "MDVP_Flow","MDVP_JitterRel", 
                                             "MDVP_JitterAbs","MDVP_Rap","MDVP_PPQ","Jitter_DDP",
                                             "MDVP_Shimmer","MDVP_ShimmerDB","Shimmer_APQ3",
                                             "Shimmer_APQ5","MDVP_APQ","Shimmer_DDA","NHR","HNR",
@@ -53,9 +53,79 @@ summary(P_init)
 library(Hmisc)
 describe(P_init)
 
+# méthodologie : 
+# https://odr.inra.fr/intranet/carto/cartowiki/index.php/Statistiques_descriptives_avec_R
+
+head(P_init)
+
 # Représentation graphique
 
+#boxplot d'attributs de même ordre de grandeur
+boxplot(P_init[,c('MDVP_Fo', 'MDVP_Fhi', 'MDVP_Flow')],
+        col = c("yellow"),           #Pour la couleur
+        main = paste("MDVP Frequencies Boxplot"),     #Pour le titre
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+# --> on visualise des données déjà "originales"
 
+
+# camembert 3d pour attribut binaire
+# permet de visualiser le ratio des signaux de patients sains vs malades
+library(plotrix)
+mytable <- table(P_init$status)
+names(mytable)
+lbls <- paste(c("Parkinson Disease", "Heathly"), "\n",mytable, sep="")
+pie3D(mytable, col=c("purple","#dd00dd"), labels = lbls, explode=0.1,
+    main="Nb of signals corresponding \n with status patient") 
+
+# les boxplots suivants permettent de juger la dispersion et repérer les 
+# éventuelles valeurs aberrantes
+
+#boxplot d'attributs de même ordre de grandeur
+boxplot(P_init[,c('MDVP_ShimmerDB')],
+        col = c("purple"),           #Pour la couleur
+        main = paste("MDVP_ShimmerDB Boxplot"),     #Pour le titre
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+#boxplot d'attributs de même ordre de grandeur
+boxplot(P_init[,c('RPDE','DFA','spread2','PPE')],
+        col = c("pink"),           #Pour la couleur
+        main = paste("RPDE, DFA, spread2 and PPE Boxplot"),     #Pour le titre
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+#boxplot d'attributs de même ordre de grandeur
+boxplot(P_init[,c('MDVP_JitterRel', 
+                  'MDVP_JitterAbs','MDVP_Rap','MDVP_PPQ','Jitter_DDP')],
+        col = c("pink"),           #Pour la couleur
+        main = paste("Boxplot"),     #Pour le titre
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+#boxplot d'attributs de même ordre de grandeur
+boxplot(P_init[,c('MDVP_Shimmer','Shimmer_APQ3',
+                  'Shimmer_APQ5','MDVP_APQ','Shimmer_DDA','NHR')],
+        col = c("pink"),           #Pour la couleur
+        main = paste("Boxplot"),     #Pour le titre
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+#boxplot d'attributs de même ordre de grandeur
+boxplot(P_init[,c('spread1')],
+        col = c("green"),           #Pour la couleur
+        main = paste("Spread1 Boxplot"),     #Pour le titre
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+#boxplot d'attributs de même ordre de grandeur
+boxplot(P_init[,c('D2')],
+        col = c("blue"),           #Pour la couleur
+        main = paste("D2 Boxplot"),     #Pour le titre
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+#boxplot d'attributs de même ordre de grandeur
+boxplot(P_init$HNR,
+        col = c("yellow"),           #Pour la couleur
+        main = paste("HNR"),     #Pour le titre
+        sub= paste("Boxplot"),      # pour le sous-titre
+        ylab = "Quantiles")         #Pour le titre de l’axe des ordonnées
+
+# Ccl : des val aberrantes potentielles ?
 
 ################################################################################
 # STEP 3 : EXPLORATING ANALYSIS
@@ -76,8 +146,11 @@ label<-attributes(P_sc)$dimnames[[1]]
 plot(P_sc, type="n")
 text(P_sc,label)
 
-boxplot(rang)
 
+
+######## voir ce qui se fait ici :
+# https://www.tidymodels.org/learn/statistics/k-means/
+# https://delladata.fr/kmeans/
 
 # Algo kmeans sur 2 clusters
 P2<-kmeans(P_sc,2)
