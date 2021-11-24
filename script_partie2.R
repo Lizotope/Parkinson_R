@@ -73,32 +73,80 @@ boxplot(P_init[,c('MDVP_Fo', 'MDVP_Fhi', 'MDVP_Flow')],
 library(plotrix)
 mytable <- table(P_init$status)
 names(mytable)
-lbls <- paste(c("Parkinson Disease", "Heathly"), "\n",mytable, sep="")
+lbls <- paste(c("Healthly", "Parkinson Disease"), "\n",mytable, sep="")
 pie3D(mytable, col=c("purple","#dd00dd"), labels = lbls, explode=0.1,
     main="Nb of signals corresponding \n with status patient") 
 
 # les boxplots suivants permettent de juger la dispersion et repérer les 
 # éventuelles valeurs aberrantes
 
-#boxplot d'attributs de même ordre de grandeur
-boxplot(P_init[,c('MDVP_ShimmerDB')],
+# Split des données patients malades vs.sains pour voir si les outliers seraient 
+# en lien avec le caractère malade du patient
+# P_pd est le dataset contenant les signaux de patients malades
+P_pd <- P_init[P_init$status==1,]
+describe(P_pd)
+# P_h est le dataset contenant les signaux de patients malades
+P_h <- P_init[P_init$status==0,]
+describe(P_h)
+
+# le split ci dessus sert à repérer sur quels sous partie du dataset se 
+# focaliserait les outliers
+# cette recherche ne se fera que pr une partie des attributs pr lesquels nous 
+# constatons bcp de point en dehors de la boxplot
+
+#boxplot de l'attribut MDVP_ShimmerDB en comparant le dataset d'origine,
+# celui des patients malades, puis celui des patients sains
+boxplot(P_init$MDVP_ShimmerDB, P_pd$MDVP_ShimmerDB, P_h$MDVP_ShimmerDB,
         col = c("purple"),           #Pour la couleur
         main = paste("MDVP_ShimmerDB Boxplot"),     #Pour le titre
+        names = c("all", "PD", "healthly"), #Pour le labelling de l'axe x
         ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
 
-#boxplot d'attributs de même ordre de grandeur
-boxplot(P_init[,c('RPDE','DFA','spread2','PPE')],
+
+#boxplot d'attributs (regroupements avec attributs de même ordre de grandeur)
+boxplot(P_init[,c('RPDE','DFA','spread2')],
         col = c("pink"),           #Pour la couleur
         main = paste("RPDE, DFA, spread2 and PPE Boxplot"),     #Pour le titre
         ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
 
+#boxplot de l'attribut PPE en comparant le dataset d'origine,
+# celui des patients malades, puis celui des patients sains
+boxplot(P_init$PPE, P_pd$PPE, P_h$PPE,
+        col = c("purple"),           #Pour la couleur
+        main = paste("PPE Boxplot"),     #Pour le titre
+        names = c("all", "PD", "healthly"), #Pour le labelling de l'axe x
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+#boxplot de l'attribut MDVP_ShimmerDB en comparant le dataset d'origine,
+# celui des patients malades, puis celui des patients sains
+boxplot(P_init$MDVP_ShimmerDB, P_pd$MDVP_ShimmerDB, P_h$MDVP_ShimmerDB,
+        col = c("purple"),           #Pour la couleur
+        main = paste("MDVP_ShimmerDB Boxplot"),     #Pour le titre
+        names = c("all", "PD", "healthly"), #Pour le labelling de l'axe x
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+boxplot(P_init$MDVP_JitterAbs, P_pd$MDVP_JitterAbs, P_h$MDVP_JitterAbs,
+        col = c("purple"),           #Pour la couleur
+        main = paste("MDVP_JitterAbs Boxplot"),     #Pour le titre
+        names = c("all", "PD", "healthly"), #Pour le labelling de l'axe x
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+# on voit ci-dessous que le caractère malade ne change pas vraiment l'occurence 
+# d'outliers
+boxplot(P_init$Jitter_DDP, P_pd$Jitter_DDP, P_h$Jitter_DDP,
+        col = c("purple"),           #Pour la couleur
+        main = paste("Jitter_DDP Boxplot"),     #Pour le titre
+        names = c("all", "PD", "healthly"), #Pour le labelling de l'axe x
+        ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
+
+# a spliter
 #boxplot d'attributs de même ordre de grandeur
-boxplot(P_init[,c('MDVP_JitterRel', 
-                  'MDVP_JitterAbs','MDVP_Rap','MDVP_PPQ','Jitter_DDP')],
+boxplot(P_init[,c('MDVP_JitterRel','MDVP_Rap','MDVP_PPQ')],
         col = c("pink"),           #Pour la couleur
         main = paste("Boxplot"),     #Pour le titre
         ylab = "Quantiles")          #Pour le titre de l’axe des ordonnées
 
+# a spliter
 #boxplot d'attributs de même ordre de grandeur
 boxplot(P_init[,c('MDVP_Shimmer','Shimmer_APQ3',
                   'Shimmer_APQ5','MDVP_APQ','Shimmer_DDA','NHR')],
@@ -126,6 +174,7 @@ boxplot(P_init$HNR,
         ylab = "Quantiles")         #Pour le titre de l’axe des ordonnées
 
 # Ccl : des val aberrantes potentielles ?
+# --> split des dataset machant avec des sujets sains et de ceux qui sont malades
 
 ################################################################################
 # STEP 3 : EXPLORATING ANALYSIS
