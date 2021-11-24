@@ -17,24 +17,27 @@
 ################################################################################
 getwd()
 setwd("/home/liz/Documents/MS_Big_Data_TP_et_projets/Data Mining/Projet/Parkinson_R")
-A_init<-read.table("parkinsons.data_headerless")
-# voir si read.csv peut convenir
-dim(A_init)
-label<-attributes(A_init)$row.names
-# librairie pour permettre le changement des col
-library(dplyr, quietly = TRUE)
-A_full <- A_init %>% rename( SignalId= V1, MDVP_Fo = V2 , MDVP_Fhi = V3, MDVP_Flow = V4, 
-                    MDVP_JitterRel = V5, MDVP_JitterAbs =V6, MDVP_Rap=V7, 
-                    MDVP_PPQ = V8, Jitter_DDP = V9, MDVP_Shimmer = V10, 
-                    MDVP_ShimmerDB = V11, Shimmer_APQ3 = V12, 
-                    Shimmer_APQ5 = V13, MDVP_APQ = V14, Shimmer_DDA = V15, 
-                    NHR = V16, HNR = V17, status = V18, RPDE = V19, DFA = V20, 
-                    spread1 = V21, spread2 = V22, D2 = V23, PPE = V24
-)
-# verification du changement de nom des colonnes
-names(A_full)
-# visualisation tableau du dataset de travail
-View(A_full)
+P_init<-read.table("parkinsons.data", header = FALSE, sep = ",", quote = "", dec = ".", 
+                   row.names=1, col.names=c("Signal_Id","MDVP_Fo", "MDVP_Fhi", "MDVP_Flow ","MDVP_JitterRel", 
+                                            "MDVP_JitterAbs","MDVP_Rap","MDVP_PPQ","Jitter_DDP",
+                                            "MDVP_Shimmer","MDVP_ShimmerDB","Shimmer_APQ3",
+                                            "Shimmer_APQ5","MDVP_APQ","Shimmer_DDA","NHR","HNR",
+                                            "status","RPDE","DFA","spread1","spread2",
+                                            "D2","PPE"),
+                   as.is = FALSE, na.strings = "NA",
+                   colClasses = NA, nrows = -1,
+                   skip = 1, check.names = TRUE, fill = !TRUE,
+                   strip.white = FALSE, blank.lines.skip = TRUE,
+                   comment.char = "#")
+
+# je vérifie le bon nommage des attributs/individus, la dim, le type des attributs
+rownames(P_init)    # lines
+colnames(P_init)    # columns
+names(P_init)       # attributes
+dim(P_init)         # dim
+str(P_init)         # types
+# visualisation en tableau du dataset de travail
+View(P_init)
 
 ################################################################################
 # STEP 2 : DESCRIPTIVE ANALYSIS
@@ -43,12 +46,12 @@ View(A_full)
 #
 # Min, max, moy, mediane, 1er et 3ème quartiles,  des 23 paramètres quantitatifs 
 # étudiés
-summary(A_full)
-# stats compkémentaires
+summary(P_init)
+# stats complémentaires
 # infos sur le nb d'observations, sur l'existence de val manquantes, 
 # et autres quantiles
 library(Hmisc)
-describe(A_full)
+describe(P_init)
 
 # Représentation graphique
 
@@ -59,28 +62,26 @@ describe(A_full)
 ################################################################################
 #
 
-
-# le kmeans ne fonctionne pas en présence de la colonne SignalId car 
-# ce sont des chaînes de caractères
-# retrait de cette colonne 1
-B_full<-A_full[-1]
-B_full
+library(tidyverse) 
 
 #
 # je m'assure que toutes les données sont définies
-all(!is.na(B_full))
+all(!is.na(P_init))
 # si il y en a une qui ne l'est pas, je cherche laquelle
-lapply(B_full,function(x) which(is.na(x)))
+lapply(P_init,function(x) which(is.na(x)))
+
+# standardisation des données
+P_sc<-scale(P_init)
+label<-attributes(P_sc)$dimnames[[1]]
+plot(P_sc, type="n")
+text(P_sc,label)
+
+boxplot(rang)
 
 
-# Standardisation des données
-B_full_sc <- scale(B_full)
-view(B_full_sc)
-
-library(tidyverse) 
 # Algo kmeans sur 2 clusters
-B2<-kmeans(B_full_sc,2)
-B2
+P2<-kmeans(P_sc,2)
+P2
 
 # Eval du nb de cluster optimal
 ######################################
@@ -89,18 +90,17 @@ library(factoextra)
 library(NbClust)
 
 #Tracé de la fonction du courde
-#source("/home/liz/Documents/MS Big Data/Data Mining/TP3-Classification/fct_coude.R")
 {
   Tab<- NULL
   for(k in 1:10){
-    Res<-kmeans(B_full_sc,k)
+    Res<-kmeans(P_sc,k)
     Tab[k]= Res$tot.withinss/Res$totss
   }
   plot(Tab, typ='l')
 }
 
 # Tracé de la valeur silhouette
-fviz_nbclust(B_full_sc, kmeans, method = "silhouette")+
+fviz_nbclust(P_sc, kmeans, method = "silhouette")+
   labs(subtitle = "Silhouette method") 
 
 # Gap statistic
@@ -108,18 +108,22 @@ fviz_nbclust(B_full_sc, kmeans, method = "silhouette")+
 # recommended value: nboot= 500 for your analysis.
 # Use verbose = FALSE to hide computing progression.
 set.seed(123)
-fviz_nbclust(B_full_sc, kmeans, nstart = 25, method = "gap_stat", nboot = 50)+
+fviz_nbclust(P_sc, kmeans, nstart = 25, method = "gap_stat", nboot = 50)+
   labs(subtitle = "Gap statistic method") 
 
 
 # visu des clusters
-km.out2=kmeans(B_full_sc,centers=2,nstart =20)
+km.out2=kmeans(P_sc,centers=2,nstart =20)
+km.out2
 pairs(B_full_sc, col=c(1:2)[km.out2$cluster]) 
+km.out$cluster
+# coord des centroïdes
+km.out=kmeans(P_sc,centers=4,nstart =20)
+km.out$centers
 
 # acp
 # visu des val aberrantes !
-library(factoextra)
-fviz_cluster(km.out2, B_full_sc, ellipse.type = "norm") 
+fviz_cluster(km.out2, P_sc, ellipse.type = "norm") 
 ################################################################################
 # END
 ################################################################################
