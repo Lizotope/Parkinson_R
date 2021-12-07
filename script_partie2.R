@@ -7,7 +7,8 @@
 ################################################################################
 # 
 # Packages needed (not exhaustive list):
-# factoextra, Hmisc, tidyverse, Nbclust, ggplot2, plotrix
+# factoextra, Hmisc, tidyverse, Nbclust, ggplot2, plotrix,corrplot, 
+# sm, zoo, vioplot
 # uncomment the following cmd to install one of them, if needed : 
 # install.packages("package_name") 
 # example : install.packages("plotrix") 
@@ -173,8 +174,140 @@ boxplot(P_init$HNR,
         sub= paste("Boxplot"),      # pour le sous-titre
         ylab = "Quantiles")         #Pour le titre de l’axe des ordonnées
 
+
+
 # Ccl : des val aberrantes potentielles ?
 # --> split des dataset machant avec des sujets sains et de ceux qui sont malades
+
+# graphique en ligne de crêtes, exemple avec HNR et D2
+# Libraries
+library(sm)
+library(zoo)
+library(ggplot2)
+library(vioplot)
+
+vioplot( P_pd$HNR, P_pd$D2, col = "palevioletred", plotCentre = "line", 
+        side = "left",  names=c("HNR", "D2"))
+vioplot(P_h$HNR, P_h$D2 , data = P_h, col = "lightblue", plotCentre = "line", 
+        side = "right", add = T)
+legend("bottomright", fill = c("palevioletred", "lightblue"), legend = c("PD", 
+                                                                         "Healthly"), title = "Status")
+stripchart(P_h$HNR, method = "jitter", col = "blue",
+           vertical = TRUE, pch = 50, add = TRUE)
+stripchart(P_pd$HNR, method = "jitter", col = "pink",
+           vertical = TRUE, pch = 50, add = TRUE)
+
+
+# jenleve le status
+P_stless <- P_init[ , -17]
+P_stless
+
+# mat de correlation (coeff de Peason par defaut)
+Mcor_P_stless <- round(cor(P_stless),2)
+View(Mcor_P_stless)
+
+# heatmap
+library(corrplot)
+corrplot(Mcor_P_stless, type="upper", order="hclust", tl.col="black", tl.srt=45)
+
+################################################################################
+# Fondre la matrice de corrélation
+library(reshape2)
+melted_cormat <- melt(Mcor_P_stless)
+library(ggplot2)
+ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()
+
+# Obtenir le triangle inférieur
+get_lower_tri<-function(Mcor_P_stless){
+  Mcor_P_stless[upper.tri(Mcor_P_stless)] <- NA
+  return(Mcor_P_stless)
+}
+# Obtenir le triangle supérieur
+get_upper_tri <- function(Mcor_P_stless){
+  Mcor_P_stless[lower.tri(Mcor_P_stless)]<- NA
+  return(Mcor_P_stless)
+}
+#utilisation
+upper_tri <- get_upper_tri(Mcor_P_stless)
+upper_tri
+# Fondre la matrice de corrélation
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+library(ggplot2)
+ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+  coord_fixed()
+
+
+reorder_cormat <- function(Mcor_P_stless){
+  # Utiliser la corrélation entre les variables
+  # comme mésure de distance
+  dd <- as.dist((1-Mcor_P_stless)/2)
+  hc <- hclust(dd)
+  Mcor_P_stless <-Mcor_P_stless[hc$order, hc$order]
+}
+
+
+# Reordonner la matrice de corrélation
+Mcor_P_stless <- reorder_cormat(Mcor_P_stless)
+upper_tri <- get_upper_tri(Mcor_P_stless)
+# Fondre la matrice de corrélation
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+# Créer un ggheatmap
+ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name="Pearson\nCorrelation") +
+  theme_minimal()+ # minimal theme
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+  coord_fixed()
+# Afficher heatmap
+print(ggheatmap)
+
+ggheatmap + 
+  geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    axis.ticks = element_blank(),
+    legend.justification = c(1, 0),
+    legend.position = c(0.6, 0.7),
+    legend.direction = "horizontal")+
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+                               title.position = "top", title.hjust = 0.5))
+# source : http://www.sthda.com/french/wiki/ggplot2-heatmap-d-une-matrice-de-corr-lation-logiciel-r-et-visualisation-de-donn-es
+################################################################################
+# Heatmap
+library(ggplot2)
+ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+  coord_fixed()
+
+# utiliser une heatmap : il faut transformer le dataframe em matrice
+M_init <- as.matrix(P_init, rownames.force = TRUE)
+# je vérifie le type
+class(M_init)
+class(P_init)
+
+heatmap(M_init)
 
 ################################################################################
 # STEP 3 : EXPLORATING ANALYSIS
