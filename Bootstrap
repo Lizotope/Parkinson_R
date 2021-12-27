@@ -1,0 +1,55 @@
+# On enlève la colonne des noms
+A2<-A2[,-1]
+
+attach(S)  ## on met le fichier dans le path 
+Sord<- S[order(status),]   ## (on peut ainsi ordonner les elts suivants le statut, et appliquer les formules du dernier tp 
+## – par défaut l'ordre est croissant, donc il mettra d'abord les statut==0 et ensuite les ==1,
+## on aura donc les 48 premiers élts à 0, et de 49 à 195 on aura des "1"
+## on peut le voir en les affichant et le max(which(S$status==0)) qui sera donc le numéro 48)  
+
+
+## On peut dès lors prélever l'échantillon (sans ordonner au préalable, on obtient une erreur)
+sub <- c(sample(1:max(which(S$status==0)), round(0.8*max(which(S$status==0)),digits=0)),sample((max(which(S$status==0))+1):80,round(0.8*length(which(S$status==1)),digits=0)))  
+
+## pour faire 80% des sains (status==0) et 80% des malades (status==1), sachant qu'on a ordonné
+#rpart n'était pas chargé
+library(rpart)
+
+# (on lance la prédiction) On apprend l'arbre
+fit <- rpart(S$status~ ., data=S, subset=sub)
+
+## on affiche fit i.e. la classification en arbre avec les proba, les etiquettes de feuille et autres...
+fit
+#on dessine l'arbre
+plot(fit)
+
+#on met les  étiquettes sur l'arbre construit
+text(fit)
+
+## Avant d'afficher la table de contingence il est nécessaire (et peut-être indispensable) de faire cette instruction (sinon erreur en console)
+S$status<-factor(S$status)
+## la cmde suivante affiche la table de contingence
+table(predict(fit, S3[-sub,], type="class"), S3[-sub, "status"])
+
+# On construit un vecteur avec les erreurs des arbres... Ici je fais d'abord une méthode manuelle, il faudra écrire un script par la suite
+bootstrap<-c(4/39,6/39,7/39,5/39,7/39,5/39,7/39,8/39,11/39,6/39,6/39,6/39,9/39,5/39,6/39,5/39,14/39,7/39,5/39,3/39)
+
+# On calcule la moyenne, l'écart-type et la variance des erreurs pour évaluer la précision
+mean(bootstrap) ## moyenne
+sd(bootstrap)   ## écart-type = standard deviation
+var(bootstrap)  ## variance
+
+
+
+
+
+
+
+
+En conclusion PPE est clairement la variable la plus prédictive (pour tous les arbres) d'après nos tests 
+
+## Après avoir réalisé ce bootstrap, des questions demeurent 
+## Faut-il conserver les 80% et donc 80-20 pour l'extraction ? Ou bien faut-il prendre 50-50% ? 
+## Faut-il normaliser les données avant de faire un Bootstrap comme celui que j'ai fait ? 
+
+ 
