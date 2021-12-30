@@ -9,7 +9,7 @@ Sord<- S[order(status),]   ## (on peut ainsi ordonner les elts suivants le statu
 
 
 ## On peut dès lors prélever l'échantillon (sans ordonner au préalable, on obtient une erreur)
-sub <- c(sample(1:max(which(S$status==0)), round(0.8*max(which(S$status==0)),digits=0)),sample((max(which(S$status==0))+1):80,round(0.8*length(which(S$status==1)),digits=0)))  
+sub <- c(sample(1:max(which(S$status==0)), round(0.8*max(which(S$status==0)),digits=0)),sample((max(which(S$status==0))+1):195,round(0.8*length(which(S$status==1)),digits=0)))  
 
 ## pour faire 80% des sains (status==0) et 80% des malades (status==1), sachant qu'on a ordonné
 #rpart n'était pas chargé
