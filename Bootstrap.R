@@ -1,6 +1,6 @@
 
 # Cette fonction réalise un Boostrap sur un dataframe "A" pendant "Nb_iter" fois et selon un pourcentage "pourc" d'individus pour l'apprentissage
-# En général, on prend 80% soit 0.8
+# En général, on prend pourc=80% soit 0.8
 
 library(rpart)
 # Initialisation de liste de subset (ls) et de tableau de performances (tp)
