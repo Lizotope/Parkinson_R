@@ -192,10 +192,10 @@ vioplot(P_h$HNR, P_h$D2 , data = P_h, col = "lightblue", plotCentre = "line",
         side = "right", add = T)
 legend("bottomright", fill = c("palevioletred", "lightblue"), legend = c("PD", 
                                                                          "Healthly"), title = "Status")
-stripchart(P_h$HNR, method = "jitter", col = "blue",
-           vertical = TRUE, pch = 50, add = TRUE)
-stripchart(P_pd$HNR, method = "jitter", col = "pink",
-           vertical = TRUE, pch = 50, add = TRUE)
+#stripchart(P_h$HNR, method = "jitter", col = "blue",
+#           vertical = TRUE, pch = 50, add = TRUE)
+#stripchart(P_pd$HNR, method = "jitter", col = "pink",
+#           vertical = TRUE, pch = 50, add = TRUE)
 
 
 # jenleve le status
@@ -289,31 +289,26 @@ ggheatmap +
                                title.position = "top", title.hjust = 0.5))
 # source : http://www.sthda.com/french/wiki/ggplot2-heatmap-d-une-matrice-de-corr-lation-logiciel-r-et-visualisation-de-donn-es
 ################################################################################
-# Heatmap
-library(ggplot2)
-ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
-  geom_tile(color = "white")+
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab",
-                       name="Pearson\nCorrelation") +
-  theme_minimal()+ 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-                                   size = 12, hjust = 1))+
-  coord_fixed()
+# A NOTER !!!
+# On observe déjà que DFA n'a peu de correlation avec aucune autre variable : ce param sera 
+# a priori très "informatif"
+# Idem pour MDVP_Fhi, MDVP_fo, MDVP_Flow
 
+
+#library(ggplot2)
 # utiliser une heatmap : il faut transformer le dataframe em matrice
 M_init <- as.matrix(P_init, rownames.force = TRUE)
 # je vérifie le type
 class(M_init)
 class(P_init)
-
-heatmap(M_init)
+#heatmap(M_init)    inutile
 
 ################################################################################
 # STEP 3 : EXPLORATING ANALYSIS
 ################################################################################
 #
-
+# STEP 3. 1 CLASSIFICATION NON SUPERVISEE
+################################################################################
 library(tidyverse) 
 
 #
@@ -323,11 +318,19 @@ all(!is.na(P_init))
 lapply(P_init,function(x) which(is.na(x)))
 
 # standardisation des données
-P_sc<-scale(P_init)
-label<-attributes(P_sc)$dimnames[[1]]
-plot(P_sc, type="n")
-text(P_sc,label)
+P_initsc<-scale(P_init)
+P_hsc<-scale(P_h)
+P_pdsc<-scale(P_pd)
 
+#affichage boite à moustaches centré réduit
+boxplot(P_initsc)
+boxplot(P_hsc)
+boxplot(P_pdsc)
+# les autres boxplot précédents sont inutiles ?
+
+label<-attributes(P_initsc)$dimnames[[1]]
+plot(P_initsc, type="n")
+text(P_initsc,label)
 
 
 ######## voir ce qui se fait ici :
@@ -335,50 +338,278 @@ text(P_sc,label)
 # https://delladata.fr/kmeans/
 
 # Algo kmeans sur 2 clusters
-P2<-kmeans(P_sc,2)
-P2
+fit.P2<-kmeans(P_initsc,4, 25)
+fit.P2
+str(fit.P2)
+fit.P2$withinss
+fit.P2$tot.withinss
+# les clusters ne sont pas assez éloignés en comparents la distance inter et intra cluster !
+# néanmoins 4 clusters semblent ne pas être si mauvais
 
+# within cluster sum of squares by cluster (WCSSC)
+# squared average distance of all the points within a cluster to the cluster centroid
+fit.P2$tot.withinss/fit.P2$totss 
+
+#between cluster sum of squares (BSSC)
+# squared average distance of all the points within a cluster to the cluster centroid
+fit.P2$betweenss/fit.P2$totss 
+
+# visualisation 2d - donc totalement imcomplète - des 4 clusters Kmeans
+library(factoextra)
+library(NbClust)
+fviz_cluster(fit.P2, data = P_initsc)
+plot(P_initsc, col = P2$cluster)
+points(P2$centers, col = 1:5, pch = 8)
+# afficher le kmeans ne fait pas de sens ! Un point est à 22 dimensions ! 
+# LEs clusters ne seront pas visibles, et ne nous permettent pas de déterminer les features prédictifs
 # Eval du nb de cluster optimal
 ######################################
 
-library(factoextra)
-library(NbClust)
-
 #Tracé de la fonction du courde
+# se base sur les distances intraclusters
 {
   Tab<- NULL
   for(k in 1:10){
-    Res<-kmeans(P_sc,k)
+    Res<-kmeans(P_initsc,k)
     Tab[k]= Res$tot.withinss/Res$totss
   }
   plot(Tab, typ='l')
 }
 
 # Tracé de la valeur silhouette
-fviz_nbclust(P_sc, kmeans, method = "silhouette")+
+# se base sur L'analyse des silhouettes peut être utilisée pour étudier la 
+# distance de séparation entre les clusters résultants.Le tracé de la silhouette 
+#affiche une mesure de la proximité de chaque point d'un cluster par rapport aux 
+#points des clusters voisins et fournit ainsi un moyen d'évaluer visuellement des 
+# paramètres tels que le nombre de clusters.Cette mesure a une plage de [-1,1].
+fviz_nbclust(P_initsc, kmeans, method = "silhouette")+
   labs(subtitle = "Silhouette method") 
-
+#la silhouette max ne dépasse pas 0,4 pour k=2, les autres val de k sont en dessous de 0,25
+# "il faut retourner sur les données"
 # Gap statistic
 # nboot = 50 to keep the function speedy.
 # recommended value: nboot= 500 for your analysis.
 # Use verbose = FALSE to hide computing progression.
 set.seed(123)
-fviz_nbclust(P_sc, kmeans, nstart = 25, method = "gap_stat", nboot = 50)+
+fviz_nbclust(P_initsc, kmeans, nstart = 25, method = "gap_stat", nboot = 50)+
   labs(subtitle = "Gap statistic method") 
 
 
 # visu des clusters
-km.out2=kmeans(P_sc,centers=2,nstart =20)
+km.out2=kmeans(P_initsc,centers=2,nstart =20)
 km.out2
-pairs(B_full_sc, col=c(1:2)[km.out2$cluster]) 
+pairs(P_initsc, col=c(1:2)[km.out2$cluster]) 
 km.out$cluster
 # coord des centroïdes
-km.out=kmeans(P_sc,centers=4,nstart =20)
+km.out=kmeans(P_initsc,centers=4,nstart =20)
 km.out$centers
 
 # acp
 # visu des val aberrantes !
-fviz_cluster(km.out2, P_sc, ellipse.type = "norm") 
+fviz_cluster(km.out2, P_initsc, ellipse.type = "norm") 
+
+
+# CAH
+################################################################################
+DP_sc <- dist(P_initsc)
+
+# DIFFERENTES CONSTRUCTIONS DE DENDOGRAMMES
+
+# méthode WARD (basée sur les variances)
+reshcW <- hclust(DP_sc, method="ward.D2")  # pour qu'on ait des variances comparables
+plot(reshcW) #pour avoir des classes homogènes en terme de variance, D2 joue selon
+#que l'on aait des petites ou des grandes variances'
+
+# méthode MIN (on dit "single")
+reshcMIN <- hclust(DP_sc, method="single")
+plot(reshcMIN)
+
+# méthode MAX (on dit "complete")
+reshcMAX <- hclust(DP_sc, method="conplete")
+plot(reshcMAX)
+  
+  # méthode MEAN (on dit "average")
+reshcMEAN <- hclust(DP_sc, method="average")
+plot(reshcMEAN)
+
+# Multidimensional Scaling Analysis (doit toujours être faite à la fin des plot)
+# permet de vérifier que les classes correspondent à ce qu'on voit sur les dendogrammes
+CordTP3<-cmdscale(DP_sc, k=3)
+label3<-attributes(CordTP3)$dimnames[[1]]
+plot(CordTP3[,1],CordTP3[,3], type="n")
+text(CordTP3[,1],CordTP3[,3],label3,cex=0.7)
+
+# Conclusion de la méthode CAH :  mieux que les kmeans qui ne donne que des sacs,
+# on sait qui est près de qui
+# Dans les classes, on peut visualiser les sous-groupes
+# hiérarchisation des groupes : de singletons à classes (la méthode divisi part
+# de classes va jusqu'aux singletons)
+# Le nb optimal de groupe  = 3, voire 5 (voir fct du coude)
+# Quand le saut est petit, cela veut dire que l'on est en train de saucissoner à
+# l'intérieur d'un groupe qui est compact'
+
+
+# Algo PAM
+################################################################################
+library(cluster)
+Respam2 <- pam(DP_sc,2)
+plot(Respam2)
+Respam2
+# Plus la silhouette est grande, mieux c'est (plus c'est proche de 1)
+# il faut essayer avec un autre k
+
+Respam3 <- pam(DP_sc,4)
+plot(Respam3)
+Respam2
+# le résultat des objective function build et swap sont peu différents donc
+# l'optimisation par swap est faible !
+Respam2$silinfo
+
+# on va essayer les mêmes algos en réduisant du mieux possible la dimension
+# REDUC DIM
+#########################################
+##
+## PCA : va permettre de passer de 22 à 5 dimension, ce qui permettra de faire 
+## une regression logistique sans trop de souci car nb individu doit être > nb d'attributs * 10
+#
+# Mode d'emploi : http://www.sthda.com/french/articles/38-methodes-des-composantes-principales-dans-r-guide-pratique/73-acp-analyse-en-composantes-principales-avec-r-l-essentiel/#packages-r
+#
+library("FactoMineR")
+res.pca <- PCA(P_initsc, scale.unit = TRUE, graph = TRUE)
+print(res.pca)
+
+# desc des val propres portant le plus l'information
+library("factoextra")
+eig.val <- get_eigenvalue(res.pca)
+eig.val
+# a priori 5 dimensuions suffisent (87% de l'info, c'est bien)
+# graphique des val propres
+fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
+
+var <- get_pca_var(res.pca)
+var
+head(var$cos2, 10)
+var$cos2
+
+# graphique des var
+library("corrplot")
+corrplot(var$cos2, is.corr=FALSE)
+# Cos2 total des variables sur Dim.1 et Dim.2
+fviz_cos2(res.pca, choice = "var", axes = 1:2)
+
+# Colorer en fonction du cos2: qualité de représentation
+fviz_pca_var(res.pca, col.var = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Évite le chevauchement de texte
+)
+#
+#Contributions des variables aux axes principaux
+head(var$contrib, 4)
+var$contrib
+# on voit que DFA, MDVP_Fo, PRDE ont des gros coeff contributeurs aux nouveaux composants
+library("corrplot")
+corrplot(var$contrib, is.corr=FALSE)   
+# Contributions des variables à PC1
+fviz_contrib(res.pca, choice = "var", axes = 1, top = 10)
+# Contributions des variables à PC2
+fviz_contrib(res.pca, choice = "var", axes = 2, top = 10) # MDVP_Fo et MDVP_Flow surpassent toutes les autres
+# Contributions des variables à PC3
+fviz_contrib(res.pca, choice = "var", axes = 3, top = 10) # D2, DFA, spread2...
+ # Contributions des variables à PC4
+fviz_contrib(res.pca, choice = "var", axes = 4, top = 10) # DFA, Shimmet_APQ5
+# Contributions des variables à PC5
+fviz_contrib(res.pca, choice = "var", axes = 5, top = 10) # RPDE, DFA, spread2
+fviz_pca_var(res.pca, col.var = "contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07")
+)
+
+#autre essai de combinaison pca (sur matrice de corrélation!! contrairement à prcomp et PCA) / 
+# a priori, le scaling n'est pas nécessaire car l'ACP/reg log s'intéresse  aux corrélations
+#https://online.stat.psu.edu/stat857/node/130/
+predictorX <- M_init[ , -17]
+responseY <- M_init[, 17]
+pca <- princomp(predictorX, cor=T) # principal components analysis using correlation matrix
+pc.comp <- pca$scores
+pca$scores
+
+pc.comp1 <- 1*pc.comp[,1] # principal component 1 scores (negated for convenience)
+pc.comp2 <- 1*pc.comp[,2] # principal component 2 scores (negated for convenience)
+pc.comp3 <- 1*pc.comp[,3] # principal component 1 scores (negated for convenience)
+pc.comp4 <- 1*pc.comp[,4] # principal component 2 scores (negated for convenience)
+pc.comp5 <- 1*pc.comp[,5] # principal component 1 scores (negated for convenience)
+# pourquoi negated???
+
+# logistic regression
+# construction modèle
+pc.comp_df <- as.data.frame(pc.comp)
+model_logistic <- glm(responseY~pc.comp1+pc.comp2+pc.comp3+pc.comp4+pc.comp5, data= pc.comp_df, family=binomial("logit"))
+model_logistic2 <- glm(responseY~pc.comp1+pc.comp2, family=binomial("logit"))
+# résultats de la construction
+summary(model_logistic)
+# prédiction
+glm.probs <- predict(model_logistic,type = "response")
+glm.preds <- ifelse(glm.probs > 0.5,1,0)
+# Accuracy
+table(glm.preds,responseY)
+mean(glm.preds == responseY)
+
+#training
+train <- pc.comp[1:150,1:5]
+train1 <- -1*train[,1] # principal component 1 scores (negated for convenience)
+train2 <- -1*train[,2] # principal component 2 scores (negated for convenience)
+train3  <- -1*train[,3] # principal component 1 scores (negated for convenience)
+train4 <- -1*train[,4] # principal component 2 scores (negated for convenience)
+train5 <- -1*train[,5] 
+train_df <- as.data.frame(train)
+names(train_df)
+responseYtrain <- M_init[1:150, 17]
+responseYtrain
+glm.fit <- glm(responseYtrain~train1+train2+train3+train4+train5, family=binomial("logit"))
+#glm.fit <- glm(responseYtrain~train1+train2+train3+train4+train5, family=binomial("logit"))
+glm.probs <- predict(glm.fit,type = "response")
+glm.preds <- ifelse(glm.probs > 0.5,1,0)
+# Accuracy
+table(glm.preds,responseYtrain)
+mean(glm.preds == responseYtrain)
+
+#testing
+test <- pc.comp[1:15,1:5]
+test_df <- as.data.frame(test)
+responseYtest <- M_init[1:15, 17]
+glm.probs <- predict(glm.fit,newdata=test_df, type = "response")
+glm.probs
+
+?predict
+
+glm.preds <- ifelse(glm.probs > 0.5,1,0)
+# Accuracy
+table(glm.preds,responseYtest)
+mean(glm.preds == responseYtest)
+
+
+set.seed(1234)
+splitSample <- sample(1:2, size=nrow(pc.comp), prob=c(0.8,0.2), replace = TRUE)
+train.pc.comp <- pc.comp[splitSample==1,]
+test.pc.comp <- pc.comp[splitSample==2,]
+model_logistic <- glm(responseY~pc.comp1+pc.comp2+pc.comp3+pc.comp4+pc.comp5, data= pc.comp_df, family=binomial("logit"))
+
+
+
+
+
+
+
+
+
+
+
+# STEP 3. 1 CLASSIFICATION  SUPERVISEE
+#
+# CART (cf Franck)
+# XGBOOST (cf web)  
+# SVM (cf méthode auteur)
+################################################################################
+#
 ################################################################################
 # END
 ################################################################################
