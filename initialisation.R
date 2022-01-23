@@ -32,6 +32,7 @@ library(tidyverse)
 library(NbClust)
 library(cluster)
 
+# chargement des données du fichier sous un dataframe
 getwd()
 setwd("/home/liz/Documents/MS_Big_Data_TP_et_projets/Data Mining/Projet/Parkinson_R")
 P_init<-read.table("parkinsons.data", header = FALSE, sep = ",", quote = "", dec = ".", 
@@ -56,10 +57,8 @@ str(P_init)         # types
 # visualisation en tableau du dataset de travail
 View(P_init)
 
-# standardisation des données (Ca va servir pr kmeans, pam et pca)
-P_initsc<-scale(P_init)
-P_hsc<-scale(P_h)
-P_pdsc<-scale(P_pd)
+# stockage du dataframe dans une matrice, plus pratique pour certaines librairies
+M_init <- as.matrix(P_init, rownames.force = TRUE)
 
 # Split des données patients malades vs.sains pour voir si les outliers seraient 
 # en lien avec le caractère malade du patient
@@ -70,5 +69,8 @@ describe(P_pd)
 P_h <- P_init[P_init$status==0,]
 describe(P_h)
 
-M_init <- as.matrix(P_init, rownames.force = TRUE)
+# standardisation des données (Ca va servir pr kmeans, pam et pca)
+P_initsc<-scale(P_init)
+P_hsc<-scale(P_h)
+P_pdsc<-scale(P_pd)
 
