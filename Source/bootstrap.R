@@ -1,6 +1,6 @@
 
-# Cette fonction réalise un Boostrap sur un dataframe "A" pendant "Nb_iter" fois et selon un pourcentage "pourc" d'individus pour l'apprentissage
-# En général, on prend pourc=80% soit 0.8
+# regarder les pdf sur arbres, reg. log., de lyon2
+# chercher comment lire un dendogramme--- regarder les td + cors dans mes recheches_perso... ex . stage7... très interessant
 
 library(rpart)
 # Initialisation de liste de subset (ls) et de tableau de performances (tp)
@@ -54,3 +54,26 @@ bootstrap <- function(A, Nb_iter, pourc)
   return(list(tab_perf=tp, list_sub=ls))
 
 }
+
+# après pour conclure l'analyse on peut faire un summary (et éventuellement un boxplot) de tab_perf et tirer le meilleur arbre selon l'analyse de la variance
+# Voir le problème des marges qui empeche de faire un boxplot... xlim ? cf memo download sur phone
+
+# commenter éventuellement le résultat du "fit" aussi, on a un affichage de la variable la plus prédictive aussi, mais avec des chiffres. 
+# Donc il faut prendre l'arbre obtenu et afficher son "fit"
+# conclusion sur la variable la plus prédictive.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
